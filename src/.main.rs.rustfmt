@@ -1,0 +1,114 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+use chrono::prelude::*;
+// hide console window on Windows in release
+use eframe::egui;
+
+struct Table {
+    cols: Vec<String>,
+    rows: Vec<Rows>,
+}
+
+struct Rows {
+    filename: String,
+    file_type: String,
+    created_at: DateTime<Utc>,
+}
+
+fn main() -> Result<(), eframe::Error> {
+    list_files();
+    let options = eframe::NativeOptions {
+        initial_window_size: Some(egui::vec2(320., 240.)),
+        ..Default::default()
+    };
+    // let mut name = "pail".to_owned();
+    // let mut age = 42;
+    //
+    // let file_table = Table {
+    //     col: "Name".to_owned(),
+    //     row: vec!["Desktop".to_owned(), "dev".to_owned()],
+    // };
+    //
+    // let type_table = Table {
+    //     col: "Type".to_owned(),
+    //     row: vec!["Folder".to_owned(), "File".to_owned()],
+    // };
+    //
+    // let tables: Tables = vec![file_table, type_table];
+
+    let table = Table {
+        cols: vec![
+            "Name".to_owned(),
+            "Type".to_owned(),
+            asjdasjdj
+            "Created At".to_owned(),
+        ],
+        rows: vec![
+            Rows {
+                filename: "Desktop".to_owned(),
+                file_type: "Folder".to_owned(),
+                created_at: chrono::Utc::now(),
+            },
+            Rows {
+                filename: "dev".to_owned(),
+                file_type: "File".to_owned(),
+                created_at: chrono::Utc::now(),
+            },
+        ],
+    };
+
+    let files = std::fs::read_dir("/Users/OkanT/Desktop/dev/").unwrap();
+
+    eframe::run_simple_native("pail", options, move |ctx, frame| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // ui.heading("pail");
+            // ui.horizontal(|ui| {
+            //     let name_label = ui.label("Your name ");
+            //     ui.text_edit_singleline(&mut name)
+            //         .labelled_by(name_label.id);
+            // });
+            // ui.add(egui::Slider::new(&mut age, 0..=120).text("age"));
+            // if ui.button("Click to add").clicked() {
+            //     age += 1;
+            // }
+            // ui.label(format!("Hello '{name}', age '{age}'"));
+            //
+            // ui.columns(2, |cols| {
+            //     for (i, col) in cols.iter_mut().enumerate() {
+            //         col.label(format!("col 1"));
+            //         if col.button("click").clicked() {
+            //             age += 1;
+            //         }
+            //     }
+            // });
+            egui::Grid::new("some_unique_id")
+                .striped(true)
+                .min_col_width(180.0)
+                .show(ui, |ui| {
+                    for t in &table.cols {
+                        ui.label(t);
+                    }
+                    ui.end_row();
+
+                    for file in files {
+                        let f = file.unwrap();
+                        ui.label(f.path().to_str());
+                    }
+                    // for r in &table.rows {
+                    //     ui.label(&r.filename);
+                    //     ui.label(&r.file_type);
+                    //     ui.label(&r.created_at.to_string());
+                    //     ui.end_row();
+                    // }
+                });
+        });
+    })
+}
+
+fn list_files() {
+    let files = std::fs::read_dir("/Users/OkanT/Desktop/dev/").unwrap();
+
+    for file in files {
+        let f = file.unwrap();
+        println!("{:?}", f);
+    }
+}
