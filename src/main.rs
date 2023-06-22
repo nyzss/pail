@@ -27,7 +27,7 @@ impl Files {
     fn new() -> Self {
         Files {
             list: vec![],
-            path: PathBuf::new(),
+            path: PathBuf::from("/"),
         }
     }
 
@@ -109,42 +109,47 @@ fn main() -> Result<(), eframe::Error> {
             //         files.path.parent().unwrap().to_str().unwrap().to_owned(),
             //     );
             // }
-            egui::Grid::new("some_unique_id")
-                .striped(true)
-                .min_col_width(180.0)
-                .show(ui, |ui| {
-                    // let list = &mut files;
-                    // let f = files.path.clone();
-                    if ui.button("..").clicked() {
-                        println!("hello guy, {:?}", &files.path);
-                        files.path = files.path.parent().unwrap().to_path_buf();
-                        // change_list(&mut files, f.parent().unwrap().to_str().unwrap());
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::Grid::new("some_unique_id")
+                    .striped(true)
+                    .min_col_width(180.0)
+                    .show(ui, |ui| {
+                        if files.path != PathBuf::from("/") {
+                            if ui.button("..").clicked() {
+                                println!("hello guy, {:?}", &files.path);
+                                // println!("strip prefix: {:?}", &files.path.strip_prefix());
+                                files.path = files.path.parent().unwrap().to_path_buf();
 
-                        files.get_files();
-                    }
+                                // change_list(&mut files, f.parent().unwrap().to_str().unwrap());
 
-                    for col in &cols {
-                        ui.label(col);
-                    }
-                    ui.end_row();
-
-                    // let list = &mut files.list;
-
-                    for file in &files.list {
-                        if ui.selectable_label(false, &file.filename).clicked() {
-                            // files = list_files(file.file_path);
-                            // println!("{}", &file.file_path)
-                            files.path = file.file_path.clone();
-
-                            // change_list(&mut files, file.file_path.as_str());
+                                files.get_files();
+                            }
                         }
-                        // ui.label(&file.filename);
-                        ui.label(&file.file_type);
-                        ui.label(&file.created_at.to_string());
+
+                        for col in &cols {
+                            ui.label(col);
+                        }
                         ui.end_row();
-                    }
-                    files.get_files();
-                });
+
+                        // let list = &mut files.list;
+
+                        for file in &files.list {
+                            if ui.selectable_label(false, &file.filename).clicked() {
+                                if &file.file_type == "Folder" {
+                                    files.path = file.file_path.clone();
+                                }
+                                println!("clicked on: {:?}", &file.file_path);
+
+                                // change_list(&mut files, file.file_path.as_str());
+                            }
+                            // ui.label(&file.filename);
+                            ui.label(&file.file_type);
+                            ui.label(&file.created_at.to_string());
+                            ui.end_row();
+                        }
+                        files.get_files();
+                    });
+            });
         });
     })
 }
