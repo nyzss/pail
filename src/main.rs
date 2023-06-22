@@ -66,7 +66,7 @@ impl Files {
 fn main() -> Result<(), eframe::Error> {
     // list_files();
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(320., 240.)),
+        initial_window_size: Some(egui::vec2(960., 720.)),
         ..Default::default()
     };
     let cols = vec![
@@ -78,9 +78,10 @@ fn main() -> Result<(), eframe::Error> {
     let mut files = Files::new();
     files.get_files();
 
+    let mut search: String = String::new();
     // println!("debug {:?}", &d);
 
-    eframe::run_simple_native("pail", options, move |ctx, frame| {
+    eframe::run_simple_native("pail", options, move |ctx, _| {
         egui::CentralPanel::default().show(ctx, |ui| {
             // ui.heading("pail");
             // ui.horizontal(|ui| {
@@ -102,23 +103,21 @@ fn main() -> Result<(), eframe::Error> {
             //         }
             //     }
             // });
-            // let f = files.path.clone();
-            // if ui.button("..").clicked() {
-            //     change_list(
-            //         &mut files,
-            //         files.path.parent().unwrap().to_str().unwrap().to_owned(),
-            //     );
-            // }
+            ui.heading("pail");
             egui::ScrollArea::vertical().show(ui, |ui| {
-                egui::Grid::new("some_unique_id")
+                egui::Grid::new("folder_table")
                     .striped(true)
-                    .min_col_width(180.0)
+                    .min_col_width(320.0)
                     .show(ui, |ui| {
+                        ui.label("filter");
+                        ui.text_edit_singleline(&mut search);
+                        ui.label(&search);
                         if files.path != PathBuf::from("/") {
                             if ui.button("..").clicked() {
                                 println!("hello guy, {:?}", &files.path);
                                 // println!("strip prefix: {:?}", &files.path.strip_prefix());
                                 files.path = files.path.parent().unwrap().to_path_buf();
+                                search = String::new();
 
                                 // change_list(&mut files, f.parent().unwrap().to_str().unwrap());
 
@@ -134,18 +133,27 @@ fn main() -> Result<(), eframe::Error> {
                         // let list = &mut files.list;
 
                         for file in &files.list {
-                            if ui.selectable_label(false, &file.filename).clicked() {
-                                if &file.file_type == "Folder" {
-                                    files.path = file.file_path.clone();
-                                }
-                                println!("clicked on: {:?}", &file.file_path);
+                            if file
+                                .filename
+                                .to_lowercase()
+                                .contains(&search.to_lowercase())
+                                || &search == ""
+                            {
+                                if ui.selectable_label(false, &file.filename).clicked() {
+                                    if &file.file_type == "Folder" {
+                                        files.path = file.file_path.clone();
+                                    }
+                                    println!("clicked on: {:?}", &file.file_path);
 
-                                // change_list(&mut files, file.file_path.as_str());
+                                    search = String::new();
+
+                                    // change_list(&mut files, file.file_path.as_str());
+                                }
+                                // ui.label(&file.filename);
+                                ui.label(&file.file_type);
+                                ui.label(&file.created_at.to_string());
+                                ui.end_row();
                             }
-                            // ui.label(&file.filename);
-                            ui.label(&file.file_type);
-                            ui.label(&file.created_at.to_string());
-                            ui.end_row();
                         }
                         files.get_files();
                     });
@@ -154,12 +162,6 @@ fn main() -> Result<(), eframe::Error> {
     })
 }
 
-// fn change_list(files: &mut Files, path: &str) {
-//     let f = Files::get_files(path.to_owned());
-//
-//     files.list = f.list;
-// }
-//
 fn get_filename(file: &std::fs::DirEntry) -> String {
     file.file_name().into_string().unwrap()
 }
