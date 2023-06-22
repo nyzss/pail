@@ -24,10 +24,10 @@ struct Files {
 }
 
 impl Files {
-    fn new(path: Option<String>) -> Self {
+    fn new(path: Option<PathBuf>) -> Self {
         Files {
             list: vec![],
-            path: PathBuf::from(path.unwrap_or("/".to_owned())),
+            path: PathBuf::from(path.unwrap_or(PathBuf::new())),
         }
     }
 
@@ -60,10 +60,14 @@ impl Files {
         self.list = rows
     }
     fn find_folders(&self, filter: String) {
+        // let mut f = Files::new(Some(filter.clone()));
         for list in &self.list {
             if list.file_type == "Folder" {
-                println!("filter: {:?}", filter);
-                println!("{:?}", list);
+                let mut f = Files::new(Some(list.file_path.clone()));
+                f.get_files();
+                for fs in &f.list {
+                    println!("path: {:?}, type: {:?}", &fs.file_path, &fs.file_type);
+                }
             }
         }
     }
@@ -100,7 +104,7 @@ fn main() -> Result<(), eframe::Error> {
         "Created At".to_owned(),
     ];
 
-    let mut files = Files::new(Some("/Users/OkanT/Desktop/dev/".to_owned()));
+    let mut files = Files::new(Some(PathBuf::from("/Users/OkanT/Desktop/dev/")));
     files.get_files();
 
     let mut filter_search: String = String::new();
@@ -153,7 +157,8 @@ fn main() -> Result<(), eframe::Error> {
                             if ui.button("..").clicked() {
                                 println!("hello guy, {:?}", &files.path);
                                 // println!("strip prefix: {:?}", &files.path.strip_prefix());
-                                files.path = files.path.parent().unwrap().to_path_buf();
+                                // files.path = files.path.parent().unwrap().to_path_buf();
+                                files.path.pop();
                                 filter_search = String::new();
 
                                 // change_list(&mut files, f.parent().unwrap().to_str().unwrap());
