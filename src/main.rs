@@ -24,10 +24,17 @@ struct Files {
 }
 
 impl Files {
-    fn new(path: Option<PathBuf>) -> Self {
+    fn new() -> Self {
         Files {
             list: vec![],
-            path: PathBuf::from(path.unwrap_or(PathBuf::new())),
+            path: PathBuf::new(),
+        }
+    }
+
+    fn from(path: PathBuf) -> Self {
+        Files {
+            list: vec![],
+            path: PathBuf::from(path),
         }
     }
 
@@ -63,7 +70,7 @@ impl Files {
         // let mut f = Files::new(Some(filter.clone()));
         for list in &self.list {
             if list.file_type == "Folder" {
-                let mut f = Files::new(Some(list.file_path.clone()));
+                let mut f = Files::from(list.file_path.clone());
                 f.get_files();
                 for fs in &f.list {
                     println!("path: {:?}, type: {:?}", &fs.file_path, &fs.file_type);
@@ -104,11 +111,12 @@ fn main() -> Result<(), eframe::Error> {
         "Created At".to_owned(),
     ];
 
-    let mut files = Files::new(Some(PathBuf::from("/Users/OkanT/Desktop/dev/")));
+    let mut files = Files::from(PathBuf::from("/Users/OkanT/Desktop/dev/"));
     files.get_files();
 
     let mut filter_search: String = String::new();
     let mut fuzzy_search: String = String::new();
+    let mut only_folders: bool = false;
 
     files.find_folders("rand".to_owned());
 
@@ -140,33 +148,31 @@ fn main() -> Result<(), eframe::Error> {
                 ui.label("filter");
                 ui.text_edit_singleline(&mut filter_search);
                 ui.label(&filter_search);
-            });
-            ui.label("|");
-            ui.horizontal(|ui| {
+                ui.label("|");
                 ui.label("fuzzy search");
                 ui.text_edit_singleline(&mut fuzzy_search);
                 ui.label(&fuzzy_search);
             });
+            ui.checkbox(&mut only_folders, "Show Only Folders");
+            if files.path != PathBuf::from("/") {
+                if ui.button("..").clicked() {
+                    println!("hello guy, {:?}", &files.path);
+                    // println!("strip prefix: {:?}", &files.path.strip_prefix());
+                    // files.path = files.path.parent().unwrap().to_path_buf();
+                    files.path.pop();
+                    filter_search = String::new();
+
+                    // change_list(&mut files, f.parent().unwrap().to_str().unwrap());
+
+                    files.get_files();
+                }
+            }
 
             egui::ScrollArea::vertical().show(ui, |ui| {
                 egui::Grid::new("folder_table")
                     .striped(true)
                     .min_col_width(320.0)
                     .show(ui, |ui| {
-                        if files.path != PathBuf::from("/") {
-                            if ui.button("..").clicked() {
-                                println!("hello guy, {:?}", &files.path);
-                                // println!("strip prefix: {:?}", &files.path.strip_prefix());
-                                // files.path = files.path.parent().unwrap().to_path_buf();
-                                files.path.pop();
-                                filter_search = String::new();
-
-                                // change_list(&mut files, f.parent().unwrap().to_str().unwrap());
-
-                                files.get_files();
-                            }
-                        }
-
                         for col in &cols {
                             ui.label(col);
                         }
@@ -181,20 +187,22 @@ fn main() -> Result<(), eframe::Error> {
                                 .contains(&filter_search.to_lowercase())
                                 || &filter_search == ""
                             {
-                                if ui.selectable_label(false, &file.filename).clicked() {
-                                    if &file.file_type == "Folder" {
-                                        files.path = file.file_path.clone();
+                                if only_folders && file.file_type == "Folder" || !only_folders {
+                                    if ui.selectable_label(false, &file.filename).clicked() {
+                                        if &file.file_type == "Folder" {
+                                            files.path = file.file_path.clone();
+                                        }
+                                        println!("clicked on: {:?}", &file.file_path);
+
+                                        filter_search = String::new();
+
+                                        // change_list(&mut files, file.file_path.as_str());
                                     }
-                                    println!("clicked on: {:?}", &file.file_path);
-
-                                    filter_search = String::new();
-
-                                    // change_list(&mut files, file.file_path.as_str());
+                                    // ui.label(&file.filename);
+                                    ui.label(&file.file_type);
+                                    ui.label(&file.created_at.to_string());
+                                    ui.end_row();
                                 }
-                                // ui.label(&file.filename);
-                                ui.label(&file.file_type);
-                                ui.label(&file.created_at.to_string());
-                                ui.end_row();
                             }
                         }
                         files.get_files();
